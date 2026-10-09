@@ -45,23 +45,22 @@ public class AuthComponent {
         this.emailVerificationRequired = emailVerificationRequired;
     }
 
-    public Optional<AuthResponse> register(RegisterRequest registerRequest) {
+    public void register(RegisterRequest registerRequest) {
         Optional<User> existingByEmail = userComponent.findByEmailOptional(registerRequest.email());
 
         if (existingByEmail.isPresent()) {
             authService.sendRegistrationAttemptNotice(existingByEmail.get());
-            return Optional.empty();
+            return;
         }
 
         User user = userComponent.create(userMapper.toUserEntity(registerRequest));
 
         if (!emailVerificationRequired) {
             userComponent.markEmailAsVerified(user);
-            return Optional.of(buildAuthResponse(user));
+            return;
         }
 
         authService.sendEmailVerification(user);
-        return Optional.empty();
     }
 
     public AuthResponse verifyEmail(VerifyEmailRequest verifyEmailRequest) {

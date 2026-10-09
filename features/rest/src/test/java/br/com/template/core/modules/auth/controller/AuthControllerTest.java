@@ -20,8 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -50,28 +48,15 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("should answer 202 without a body on register so it never reveals who has an account")
-    void shouldAnswerAcceptedOnRegister() {
+    @DisplayName("should always answer 202 without a body on register so it never reveals who has an account")
+    void shouldAlwaysAnswerAcceptedOnRegister() {
         RegisterRequest request = buildRegisterRequest();
-        given(authComponent.register(request)).willReturn(Optional.empty());
 
-        ResponseEntity<AuthResponse> response = authController.register(request);
+        ResponseEntity<Void> response = authController.register(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(response.getBody()).isNull();
-    }
-
-    @Test
-    @DisplayName("should answer 200 with the token pair on register when email verification is disabled")
-    void shouldAnswerOkOnRegisterWhenVerificationDisabled() {
-        RegisterRequest request = buildRegisterRequest();
-        AuthResponse authResponse = AuthResponse.builder().accessToken("access-token").build();
-        given(authComponent.register(request)).willReturn(Optional.of(authResponse));
-
-        ResponseEntity<AuthResponse> response = authController.register(request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(authResponse);
+        then(authComponent).should().register(request);
     }
 
     @Test

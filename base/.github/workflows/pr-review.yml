@@ -102,6 +102,8 @@ jobs:
             const isPomChanged = changedFiles.includes('pom.xml');
             const ruleFiles = ['AI_RULES.md', '.cursor/ai_rules.json', '.ag/ai_rules.toml', '.github/ai-rules.yml'];
             const changedRuleFiles = ruleFiles.filter(f => changedFiles.includes(f));
+            const isHighRiskChanged = changedFiles.some(f => f.startsWith('src/main/java/') && (f.includes('/config/') || f.includes('/security/') || f.includes('/models/') || f.includes('/schedulers/'))) || isMigrationChanged;
+            const isFlowTestChanged = changedFiles.some(f => f.startsWith('src/test/') && (f.endsWith('FlowTest.java') || f.endsWith('IntegrationTest.java')));
 
             const buildOk = '${{ needs.build.result }}' === 'success';
             const coveragePercent = process.env.COVERAGE_PERCENT ? parseFloat(process.env.COVERAGE_PERCENT) : null;
@@ -122,6 +124,7 @@ jobs:
             if (isPomChanged) configIssues.push('⚠️ `pom.xml` alterado: dependência nova exige Issue documentada + aprovação do mantenedor (regra 3 do `AI_RULES.md`).');
             if (isControllerChanged && !isApiDocChanged) apiIssues.push('📄 Controller alterado sem mudança em `docs/API.md` — todo endpoint novo/alterado entra no documento no mesmo PR (regra 11 do `AI_RULES.md`).');
             if (isEntityChanged && !isEntityDocChanged) qualityIssues.push('📄 Entidade JPA alterada sem mudança em `docs/ENTIDADES.md` — manter o inventário de tabelas em dia.');
+            if (isHighRiskChanged && !isFlowTestChanged) qualityIssues.push('🧪 Mudança de alto risco (config/security/entidade/scheduler/migration) sem `*FlowTest`/`*IntegrationTest` tocado — regra 13 do `AI_RULES.md` pede validação e2e do fluxo. Diga no PR o que foi validado e o que não foi (`docs/VALIDACAO.md`).');
             if (changedRuleFiles.length > 0 && changedRuleFiles.length < ruleFiles.length) qualityIssues.push(`⚠️ Regras de IA fora de sincronia: mudou ${changedRuleFiles.join(', ')} mas não os outros (${ruleFiles.filter(f => !changedRuleFiles.includes(f)).join(', ')}).`);
             if (files.some(f => f.status === 'removed')) breakingIssues.push('⚠️ Arquivos removidos: avaliar breaking changes.');
 

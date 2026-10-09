@@ -41,13 +41,14 @@ curl http://localhost:8080/api/ping
 | `email` | string | obrigatório, formato de e-mail |
 | `password` | string | obrigatório, mínimo 8 |
 
-**`202 Accepted` sem corpo** é a resposta normal: a conta foi criada e o e-mail de confirmação
-enviado. É **também** a resposta quando o e-mail já tem conta — nesse caso nada é criado e o dono
-do e-mail recebe um aviso de tentativa. O chamador não consegue distinguir os dois casos, e isso é
-deliberado: evita enumeração de contas.
+**`202 Accepted` sem corpo, sempre.** A conta foi criada e o e-mail de confirmação enviado — e é
+exatamente a mesma resposta quando o e-mail já tem conta, caso em que nada é criado e o dono do
+e-mail recebe um aviso de tentativa. O chamador **não consegue distinguir os dois casos**, e isso é
+deliberado: status diferente por caso transforma o cadastro em oráculo de enumeração de contas.
 
-Com `app.auth.email-verification-required=false` a conta nasce confirmada e a resposta é
-**`200`** com o par de tokens (ver `/login`). Use só em demonstração.
+Por isso o cadastro **nunca** devolve token, nem quando `app.auth.email-verification-required=false`:
+o par de tokens vem do `/login`, que é a única rota que sabe se a conta existe e a senha confere.
+Com a verificação desligada a conta nasce confirmada e o `/login` seguinte funciona de imediato.
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/register \

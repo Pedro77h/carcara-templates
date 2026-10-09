@@ -36,14 +36,14 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Cadastro",
-            description = "Cria a conta e envia o e-mail de confirmação. Responde 202 sem corpo, inclusive "
-                    + "quando o e-mail já está cadastrado, para não revelar quem tem conta. Com "
-                    + "app.auth.email-verification-required=false a conta já nasce confirmada e a resposta "
-                    + "é 200 com o par de tokens")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        return authComponent.register(registerRequest)
-                .<ResponseEntity<AuthResponse>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.accepted().build());
+            description = "Cria a conta e envia o e-mail de confirmação. Responde 202 sem corpo **sempre** — "
+                    + "inclusive quando o e-mail já está cadastrado, caso em que nada é criado e o dono do "
+                    + "e-mail recebe um aviso de tentativa. O chamador não distingue os dois casos, e isso "
+                    + "evita enumeração de contas. O par de tokens vem do login, nunca do cadastro")
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        authComponent.register(registerRequest);
+
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/verify-email")

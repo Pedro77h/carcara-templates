@@ -94,6 +94,23 @@ rules:
     enforcement:
       - type: guidance
 
+  - id: risk-proportional-validation
+    description: "Validar proporcionalmente ao risco e provar o fluxo ponta a ponta: baixo risco sem teste, medio risco com teste do que mudou, alto risco (auth, roles, multi-tenancy, migration, entidade, config/, contrato de API, scheduler, fila) com ./mvnw verify mais validacao e2e do fluxo. ./mvnw verify nao abre a aplicacao. Nunca inventar resultado: dizer o que rodou, o que nao rodou, o comando recomendado e o risco residual. Referencia: docs/VALIDACAO.md"
+    paths:
+      - "src/main/java/**"
+      - "src/main/resources/db/**"
+      - "src/test/java/**"
+    enforcement:
+      - type: guidance
+
+  - id: findings-registry
+    description: "Achado (bug, gap, inconsistencia, risco operacional) vai em docs/REGISTRO_ACHADOS.md, nunca em arquivo avulso. Porta estreita: so entra severidade alta/critica, ou qualquer severidade de origem externa (usuario, homologacao, falha de teste ou de porta de qualidade), ou pedido explicito. Achado baixo/medio encontrado pela propria IA revisando o proprio trabalho nao entra. Achado encerrado vai para docs/REGISTRO_ACHADOS_ARQUIVO.md; defeito que volta e achado novo citando o arquivado. Teto de 30 abertos, verificado no pre-push"
+    paths:
+      - "docs/REGISTRO_ACHADOS.md"
+      - "docs/REGISTRO_ACHADOS_ARQUIVO.md"
+    enforcement:
+      - type: guidance
+
 review:
   role: comment-only
   description: "A IA aponta pontos de atenção como comentários; nunca aprova nem reprova PRs"

@@ -13,7 +13,9 @@ chamar, além do `/api/ping`. Escolha-a para qualquer projeto cuja porta de entr
 | `modules/auth/controller/AuthController` | register, verify-email, login, refresh, logout, forgot/reset de senha |
 | `modules/user/controller/MeController` | `GET`/`PATCH`/`DELETE /api/me` e `POST /api/me/password` |
 | `config/advices/AuthAdvice` | exceção de auth → `401`/`400`/`410`/`429` |
+| `scripts/smoke.sh` | smoke e2e do fluxo de conta contra uma instância de pé |
 | `docs/API.md` | **substitui** o do base, com todas as rotas documentadas |
+| `appends/docs/VALIDACAO.md` | acrescenta a seção do smoke ao `docs/VALIDACAO.md` do base |
 
 ## O que substitui
 
@@ -42,6 +44,28 @@ responde igual para e-mail conhecido e desconhecido.
 
 `AuthRateLimitFlowTest` confere o `429` após o limite, a limpeza do contador no login bem-sucedido
 e que o identificador gravado em `auth_attempts` **não** contém o e-mail nem o IP em claro.
+
+### E o smoke, que pega o que nenhum deles pega
+
+`scripts/smoke.sh` percorre o mesmo fluxo por HTTP real contra a aplicação de pé. Não é redundância
+com o `AuthFlowTest`: os testes substituem o `application.properties` por um de teste, então
+**divergência de configuração passa verde na suíte**. Foi o smoke que achou o `hibernate.dialect`
+fixado no arquivo principal, que fazia todo token tomar `401` depois da primeira troca de senha
+enquanto o `AuthFlowTest` jurava que funcionava. Ver `ACH-20261009-001` em
+`docs/REGISTRO_ACHADOS.md`.
+
+## O cadastro responde 202 sempre, e isso é contrato
+
+`POST /api/auth/register` devolve **`202` sem corpo em todos os casos**: e-mail livre ou e-mail já
+cadastrado, verificação de e-mail ligada ou desligada. Nunca devolve token.
+
+Não é descuido de modelagem. Status diferente por caso transforma o cadastro em oráculo de
+enumeração: quem recebe `200` sabe que o e-mail estava livre, quem recebe `202` sabe que já tem
+conta. Como o par de tokens só vem do `/login`, a resposta do cadastro não carrega informação
+nenhuma sobre a existência da conta — que é o objetivo.
+
+Em modo de demonstração (`app.auth.email-verification-required=false`) a conta nasce confirmada e o
+`/login` seguinte funciona de imediato: uma chamada a mais, zero vazamento.
 
 ## Atenção em produção
 

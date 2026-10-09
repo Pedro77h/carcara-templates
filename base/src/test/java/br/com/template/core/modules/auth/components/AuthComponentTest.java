@@ -91,26 +91,25 @@ class AuthComponentTest {
             given(userMapper.toUserEntity(request)).willReturn(user);
             given(userComponent.create(user)).willReturn(user);
 
-            Optional<AuthResponse> result = authComponentOf(true).register(request);
+            authComponentOf(true).register(request);
 
-            assertThat(result).isEmpty();
             then(authService).should().sendEmailVerification(user);
+            then(authService).should(never()).buildAuthResponse(any(), any());
         }
 
         @Test
-        @DisplayName("should issue tokens right away when email verification is disabled")
-        void shouldIssueTokensWhenVerificationDisabled() {
+        @DisplayName("should confirm the email without issuing tokens when verification is disabled")
+        void shouldConfirmWithoutTokensWhenVerificationDisabled() {
             User user = buildVerifiedUser();
             given(userComponent.findByEmailOptional("ana@example.com")).willReturn(Optional.empty());
             given(userMapper.toUserEntity(request)).willReturn(user);
             given(userComponent.create(user)).willReturn(user);
-            givenTokensAreIssuedFor(user);
 
-            Optional<AuthResponse> result = authComponentOf(false).register(request);
+            authComponentOf(false).register(request);
 
-            assertThat(result).isPresent();
             then(userComponent).should().markEmailAsVerified(user);
             then(authService).should(never()).sendEmailVerification(user);
+            then(authService).should(never()).buildAuthResponse(any(), any());
         }
 
         @Test
@@ -119,9 +118,8 @@ class AuthComponentTest {
             User existing = buildVerifiedUser();
             given(userComponent.findByEmailOptional("ana@example.com")).willReturn(Optional.of(existing));
 
-            Optional<AuthResponse> result = authComponentOf(true).register(request);
+            authComponentOf(true).register(request);
 
-            assertThat(result).isEmpty();
             then(authService).should().sendRegistrationAttemptNotice(existing);
             then(userComponent).should(never()).create(any());
         }

@@ -24,7 +24,7 @@ registrado no `FEATURE.md` — substituição silenciosa de arquivo é difícil 
 
 | Feature | O que acrescenta | Substitui |
 |---|---|---|
-| `rest` | controllers de `auth` e `/api/me`, `AuthAdvice`, rotas públicas de `/api/auth/**` | `config/security/SecurityConfig.java`, `docs/API.md` |
+| `rest` | controllers de `auth` e `/api/me`, `AuthAdvice`, rotas públicas de `/api/auth/**`, `scripts/smoke.sh` | `config/security/SecurityConfig.java`, `docs/API.md` |
 | `deploy` | EC2 + systemd + nginx + workflow de deploy, `DEPLOY.md` | — |
 
 ## O que o base sempre traz
@@ -34,3 +34,7 @@ Validation, OpenAPI/Swagger, Flyway com os quatro diretórios de migration, perf
 `local`/`dev`/`prod`, JaCoCo com meta de 80%, os módulos `auth`/`user`/`email`/`health`, a camada
 de governança de IA (`AI_RULES.md` + as três réplicas, `CLAUDE.md`, `docs/`, a skill
 `revisao-arquitetural`), o hook de `pre-push` e o workflow `pr-review.yml`.
+
+Mais os três documentos de processo: `docs/VALIDACAO.md` (validação proporcional ao risco e a regra
+de validação e2e por change), `docs/REGISTRO_ACHADOS.md` (achados abertos, com porta de entrada
+estreita e teto) e `docs/REGISTRO_ACHADOS_ARQUIVO.md` (acervo imutável).

@@ -10,6 +10,8 @@ Backend Spring Boot gerado a partir do [template](https://github.com/Pedro77h/sp
 | [`docs/REGRAS_DE_NEGOCIO.md`](docs/REGRAS_DE_NEGOCIO.md) | O que o produto faz e **por quê** |
 | [`docs/API.md`](docs/API.md) | Contrato das rotas — atualizado no mesmo PR do endpoint |
 | [`docs/ENTIDADES.md`](docs/ENTIDADES.md) | Tabelas, campos, índices e restrições |
+| [`docs/VALIDACAO.md`](docs/VALIDACAO.md) | **Como provar que a mudança funciona** — validação por risco e e2e do fluxo |
+| [`docs/REGISTRO_ACHADOS.md`](docs/REGISTRO_ACHADOS.md) | Achados abertos (bugs, gaps, riscos) e como registrar |
 | [`docs/DEBITO_TECNICO.md`](docs/DEBITO_TECNICO.md) | O que foi deixado para depois, e por quê |
 | [`docs/changes/`](docs/changes/) | Histórico de decisões de arquitetura e de regra |
 | [`AI_RULES.md`](AI_RULES.md) | Regras para assistentes de código (fonte de verdade) |
@@ -64,7 +66,11 @@ git config core.hooksPath .githooks
 ```
 
 Antes de cada push, o hook confere: nome das migrations, migration já aplicada que foi alterada,
-`./mvnw verify` e cobertura ≥80%. Para pular em emergência: `SKIP_PREPUSH=1 git push`.
+`./mvnw verify`, cobertura ≥80% e o registro de achados (nada encerrado no arquivo vivo, teto de
+abertos respeitado). Para pular em emergência: `SKIP_PREPUSH=1 git push` — e dizer no PR que pulou.
+
+**O hook não abre a aplicação.** Mudança que altera comportamento de fluxo precisa da validação e2e
+descrita em [`docs/VALIDACAO.md`](docs/VALIDACAO.md).
 
 ## Autenticação
 
