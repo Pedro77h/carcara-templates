@@ -1,0 +1,16 @@
+[Unit]
+Description=core - Spring Boot Application
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+User=core
+WorkingDirectory=/opt/core-app
+ExecStart=/usr/bin/java -jar /opt/core-app/app.jar --spring.profiles.active=dev
+EnvironmentFile=/opt/core-app/.env
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,51 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: Dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build jar
+        run: ./mvnw -q -DskipTests package
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Copy jar to EC2
+        run: |
+          scp -i ~/.ssh/deploy_key target/core-0.0.1-SNAPSHOT.jar \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app.jar.new"
+
+      - name: Restart service
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
+            set -e
+            sudo mv /home/'"${{ secrets.EC2_USER }}"'/app.jar.new /opt/core-app/app.jar
+            sudo chown core:core /opt/core-app/app.jar
+            sudo systemctl restart core-app.service
+            sleep 5
+            sudo systemctl is-active --quiet core-app.service
+          '

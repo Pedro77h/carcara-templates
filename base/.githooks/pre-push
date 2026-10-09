@@ -1,0 +1,59 @@
+#!/bin/sh
+set -e
+
+if [ -n "$SKIP_PREPUSH" ]; then
+  echo "pre-push: pulado (SKIP_PREPUSH)"
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+MIGRATIONS=src/main/resources/db/migration
+FAIL=0
+
+echo "==> [1/3] Migrations Flyway"
+
+for file in "$MIGRATIONS"/*.sql; do
+  [ -e "$file" ] || continue
+  name=$(basename "$file")
+  case "$name" in
+    V*__*.sql|R__*.sql) ;;
+    *) echo "  X nome fora do padrao Flyway: $name"; FAIL=1 ;;
+  esac
+done
+
+DUP=$(ls "$MIGRATIONS" 2>/dev/null | sed -n 's/^V\([0-9][0-9.]*\)__.*\.sql$/\1/p' | sort | uniq -d)
+if [ -n "$DUP" ]; then
+  echo "  X versao de migration duplicada: $DUP"
+  FAIL=1
+fi
+
+BASE=$(git merge-base HEAD origin/main 2>/dev/null || true)
+if [ -n "$BASE" ]; then
+  TOUCHED=$(git diff --diff-filter=MD --name-only "$BASE" HEAD -- "$MIGRATIONS" || true)
+  if [ -n "$TOUCHED" ]; then
+    echo "  X migration ja aplicada foi alterada/removida (checksum quebra em prod):"
+    echo "$TOUCHED" | sed 's/^/     /'
+    FAIL=1
+  fi
+fi
+
+[ "$FAIL" -eq 0 ] && echo "  ok" || exit 1
+
+echo "==> [2/3] Build + testes"
+./mvnw -B verify
+
+echo "==> [3/3] Cobertura de linha (meta 80%)"
+CSV=target/site/jacoco/jacoco.csv
+if [ ! -f "$CSV" ]; then
+  echo "  X relatorio JaCoCo ausente: $CSV"
+  exit 1
+fi
+awk -F, 'NR>1 {m+=$8; c+=$9} END {
+  t=m+c
+  if (t==0) { print "  X nenhuma linha instrumentada"; exit 1 }
+  p=(c/t)*100
+  printf "  cobertura: %.1f%%\n", p
+  if (p < 80) { print "  X abaixo da meta de 80% (AI_RULES.md)"; exit 1 }
+}' "$CSV"
+
+echo "==> pre-push ok"

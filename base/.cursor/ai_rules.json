@@ -1,0 +1,93 @@
+{
+  "alwaysApply": true,
+  "rules": [
+    {
+      "id": "test-coverage-gate",
+      "description": "Cobertura de testes unitários (JUnit 5 + BDDMockito + AssertJ, given/when/then) deve ficar >= 80%",
+      "paths": [
+        "src/test/**"
+      ]
+    },
+    {
+      "id": "follow-architecture",
+      "description": "Preservar a estrutura por módulo e a direção de dependência: controller -> só components; components -> components de outros módulos e services do próprio módulo; services -> repositories e outros services, nunca components. Detalhe em docs/ARQUITETURA.md",
+      "paths": [
+        "src/main/java/**"
+      ]
+    },
+    {
+      "id": "no-new-deps",
+      "description": "Não instalar novas dependências sem aprovação do mantenedor",
+      "paths": [
+        "pom.xml"
+      ]
+    },
+    {
+      "id": "query-in-database",
+      "description": "Consultar no banco, nunca em memória: JPQL para consulta fixa, Specification (mapper monta, repositório estende JpaSpecificationExecutor) para filtro opcional ou combinável",
+      "paths": [
+        "src/main/java/**/repositories/**",
+        "src/main/java/**/mappers/**"
+      ]
+    },
+    {
+      "id": "avoid-nplus1",
+      "description": "Evitar N+1; usar fetch joins/EntityGraph",
+      "paths": [
+        "src/main/java/**"
+      ]
+    },
+    {
+      "id": "minimize-tokens",
+      "description": "Promover prompts concisos ao interagir com IAs"
+    },
+    {
+      "id": "prefer-objects-null-checks",
+      "description": "Usar Objects.isNull(x)/Objects.nonNull(x) em vez de x == null / x != null",
+      "paths": [
+        "src/main/java/**",
+        "src/test/java/**"
+      ]
+    },
+    {
+      "id": "no-code-comments",
+      "description": "Nunca escrever comentários no código-fonte (// ou /** */), inclusive em testes; exceção: Javadoc exigido por ferramentas externas (ex: OpenAPI @Schema/@Operation)",
+      "paths": [
+        "src/main/java/**",
+        "src/test/java/**"
+      ]
+    },
+    {
+      "id": "flyway-only-schema-changes",
+      "description": "Mudança de schema só via migration Flyway em db/migration; ddl-auto fica em validate; migration já aplicada nunca é editada; dado de demonstração só em db/migration-dev",
+      "paths": [
+        "src/main/resources/db/**",
+        "src/main/java/**/models/**"
+      ]
+    },
+    {
+      "id": "personal-data-care",
+      "description": "Dado pessoal novo precisa de finalidade declarada; nunca logar dado pessoal, token ou credencial (logs citam só identificadores técnicos); consulta de dado de usuário escopada pelo dono na própria query, com 404 e nunca 403 para registro de terceiro",
+      "paths": [
+        "src/main/java/**"
+      ]
+    },
+    {
+      "id": "living-api-doc",
+      "description": "Todo endpoint novo ou alterado entra em docs/API.md no mesmo PR: método, autorização, campos e validações, resposta, erros e curl de exemplo",
+      "paths": [
+        "src/main/java/**/controller/**",
+        "docs/API.md"
+      ]
+    },
+    {
+      "id": "builder-not-record-for-response-dtos",
+      "description": "DTO de resposta e objeto de conversão de mapper usam classe com @Getter @Builder @NoArgsConstructor @AllArgsConstructor; record fica só para DTO de request validado com @Valid",
+      "paths": [
+        "src/main/java/**/dtos/**",
+        "src/main/java/**/mappers/**"
+      ]
+    }
+  ],
+  "notes": "A IA aponta pontos de atenção como comentários; nunca aprova nem reprova PRs. Fonte de verdade: AI_RULES.md na raiz."
+}

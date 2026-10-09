@@ -1,0 +1,241 @@
+name: Automated Code Review Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run tests with coverage
+        id: tests
+        continue-on-error: true
+        run: ./mvnw -q test
+
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/jacoco.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  review:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download JaCoCo report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: jacoco-report
+          path: jacoco-report
+
+      - name: Compute coverage percentage
+        id: coverage
+        run: |
+          FILE="jacoco-report/jacoco.csv"
+          if [ ! -f "$FILE" ]; then
+            echo "percent=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          MISSED=$(awk -F, 'NR>1 {sum+=$8} END {print sum+0}' "$FILE")
+          COVERED=$(awk -F, 'NR>1 {sum+=$9} END {print sum+0}' "$FILE")
+          TOTAL=$((MISSED + COVERED))
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "percent=" >> "$GITHUB_OUTPUT"
+          else
+            PERCENT=$(awk -v c="$COVERED" -v t="$TOTAL" 'BEGIN { printf "%.1f", (c/t)*100 }')
+            echo "percent=$PERCENT" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Analyze PR
+        id: analyze
+        uses: actions/github-script@v7
+        env:
+          COVERAGE_PERCENT: ${{ steps.coverage.outputs.percent }}
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              per_page: 100,
+            });
+
+            const changedFiles = files.map(f => f.filename);
+            const isControllerChanged = changedFiles.some(f => f.includes('/controller/') && f.endsWith('.java'));
+            const isDtoChanged = changedFiles.some(f => f.includes('/dtos/') && f.endsWith('.java'));
+            const isRepoChanged = changedFiles.some(f => f.includes('/repositories/') && f.endsWith('.java'));
+            const isConfigChanged = changedFiles.some(f => f.startsWith('src/main/resources/application') || f.endsWith('.yml') || f.endsWith('.yaml'));
+            const isMigrationChanged = changedFiles.some(f => f.startsWith('src/main/resources/db/migration') && f.endsWith('.sql'));
+            const isTestChanged = changedFiles.some(f => f.startsWith('src/test/'));
+            const isProductionCodeChanged = changedFiles.some(f => f.startsWith('src/main/java/') && f.endsWith('.java'));
+            const isApiDocChanged = changedFiles.includes('docs/API.md');
+            const isEntityChanged = changedFiles.some(f => f.includes('/models/') && f.endsWith('.java'));
+            const isEntityDocChanged = changedFiles.includes('docs/ENTIDADES.md');
+            const isPomChanged = changedFiles.includes('pom.xml');
+            const ruleFiles = ['AI_RULES.md', '.cursor/ai_rules.json', '.ag/ai_rules.toml', '.github/ai-rules.yml'];
+            const changedRuleFiles = ruleFiles.filter(f => changedFiles.includes(f));
+
+            const buildOk = '${{ needs.build.result }}' === 'success';
+            const coveragePercent = process.env.COVERAGE_PERCENT ? parseFloat(process.env.COVERAGE_PERCENT) : null;
+            const coverageThreshold = 80;
+            const buildIssues = [];
+            const apiIssues = [];
+            const breakingIssues = [];
+            const qualityIssues = [];
+            const perfIssues = [];
+            const configIssues = [];
+
+            if (!buildOk) buildIssues.push('Compilação falhou no GitHub Actions.');
+            if (isControllerChanged) apiIssues.push('⚠️ Mudança em controller Java: revisar rota base /api/* e verbos HTTP.');
+            if (isDtoChanged) breakingIssues.push('⚠️ DTO alterado: verificar remoção/renomeação de campos e impacto no contrato.');
+            if (isRepoChanged) perfIssues.push('💡 Repository alterado: revisar JPQL, N+1, fetch joins e paginação.');
+            if (isConfigChanged) configIssues.push('🔒 Config alterada: validar env vars, perfis e segredos hardcoded.');
+            if (isMigrationChanged) configIssues.push('🗄️ Migration Flyway alterada: conferir compatibilidade com as entidades JPA (ddl-auto=validate) e com bases já migradas.');
+            if (isPomChanged) configIssues.push('⚠️ `pom.xml` alterado: dependência nova exige Issue documentada + aprovação do mantenedor (regra 3 do `AI_RULES.md`).');
+            if (isControllerChanged && !isApiDocChanged) apiIssues.push('📄 Controller alterado sem mudança em `docs/API.md` — todo endpoint novo/alterado entra no documento no mesmo PR (regra 11 do `AI_RULES.md`).');
+            if (isEntityChanged && !isEntityDocChanged) qualityIssues.push('📄 Entidade JPA alterada sem mudança em `docs/ENTIDADES.md` — manter o inventário de tabelas em dia.');
+            if (changedRuleFiles.length > 0 && changedRuleFiles.length < ruleFiles.length) qualityIssues.push(`⚠️ Regras de IA fora de sincronia: mudou ${changedRuleFiles.join(', ')} mas não os outros (${ruleFiles.filter(f => !changedRuleFiles.includes(f)).join(', ')}).`);
+            if (files.some(f => f.status === 'removed')) breakingIssues.push('⚠️ Arquivos removidos: avaliar breaking changes.');
+
+            let coverageBelowThreshold = false;
+            if (coveragePercent === null) {
+              qualityIssues.push('⚠️ Não foi possível calcular a cobertura de testes (relatório JaCoCo ausente ou testes falharam).');
+              coverageBelowThreshold = true;
+            } else if (coveragePercent < coverageThreshold) {
+              qualityIssues.push(`🔴 Cobertura de testes: **${coveragePercent}%** (abaixo da meta de ${coverageThreshold}%, ver \`AI_RULES.md\`).`);
+              coverageBelowThreshold = true;
+            } else {
+              qualityIssues.push(`🟢 Cobertura de testes: **${coveragePercent}%** (acima da meta de ${coverageThreshold}%).`);
+            }
+            if (isTestChanged) qualityIssues.push('✅ `src/test/**` alterado nesta PR.');
+            else if (isProductionCodeChanged) qualityIssues.push('⚠️ Código de produção alterado sem mudanças em `src/test/**` — confirmar se há teste cobrindo a mudança.');
+
+            const highRisk = !buildOk || apiIssues.length > 0 || breakingIssues.length > 0 || configIssues.length > 0 || coverageBelowThreshold;
+            const risk = highRisk ? 'HIGH' : ((qualityIssues.length || perfIssues.length) ? 'MEDIUM' : 'LOW');
+
+            const riskColor = risk === 'HIGH' ? '🔴' : (risk === 'MEDIUM' ? '🟡' : '🟢');
+            const riskText = risk === 'HIGH' ? 'ALTO' : (risk === 'MEDIUM' ? 'MÉDIO' : 'BAIXO');
+
+            const summary = [
+              '## 🔍 Análise Automática de Código',
+              '',
+              '### 📊 Resumo da PR',
+              changedFiles.length ? `- **Arquivos alterados:** ${changedFiles.length}` : '- Nenhuma alteração detectada.',
+              '',
+              '### ✅ Build & Compilação',
+              `- **Status:** ${buildOk ? '✅ PASS' : '❌ FAIL'}`,
+              buildIssues.length ? buildIssues.map(i => `- ${i}`).join('\n') : '- Nenhum problema detectado.',
+              '',
+              '### 🏗️ Design da API',
+              apiIssues.length ? apiIssues.map(i => `- ${i}`).join('\n') : '- Nenhuma violação detectada.',
+              '',
+              '### 💥 Breaking Changes',
+              breakingIssues.length ? breakingIssues.map(i => `- ${i}`).join('\n') : '- Nenhuma quebra evidente detectada.',
+              '',
+              '### 📝 Qualidade de Código',
+              qualityIssues.length ? qualityIssues.map(i => `- ${i}`).join('\n') : '- Nenhuma observação.',
+              '',
+              '### ⚡ Performance & Banco de Dados',
+              perfIssues.length ? perfIssues.map(i => `- ${i}`).join('\n') : '- Nenhuma observação.',
+              '',
+              '### 🔐 Configuração & Segurança',
+              configIssues.length ? configIssues.map(i => `- ${i}`).join('\n') : '- Nenhuma observação.',
+              '',
+              `### ${riskColor} Nível de Risco Automático`,
+              `**${riskText}**`,
+              '',
+              '---',
+              '',
+              '📌 **Nota Importante:**',
+              'Esta análise é **automatizada** e aponta pontos de atenção para revisão manual.',
+              'A aprovação/rejeição final é responsabilidade exclusiva dos mantenedores do projeto.',
+              'Veja [AI_RULES.md](./AI_RULES.md) para entender o papel da análise automática.',
+            ].join('\n');
+
+            core.summary.addRaw(summary).write();
+            core.setOutput('summary', summary);
+
+            // Log apenas para referência, sem bloquear
+            if (risk === 'HIGH') {
+              console.log('⚠️ Risco crítico detectado - revisor deve avaliar com cuidado');
+            }
+
+      - name: Comment review summary
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          SUMMARY: ${{ steps.analyze.outputs.summary }}
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: process.env.SUMMARY || '⚠️ Resumo de revisão automática indisponível.',
+            });
+
+
+  architect-review:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar chave da API
+        id: key
+        run: |
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "ANTHROPIC_API_KEY ausente - revisao arquitetural ignorada." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Revisao arquitetural (Claude)
+        if: steps.key.outputs.present == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Use a skill `revisao-arquitetural` (em .claude/skills/) para revisar o diff desta PR
+            (`git diff origin/${{ github.event.pull_request.base.ref }}...HEAD`) e publique os achados
+            em um unico comentario na PR #${{ github.event.pull_request.number }} via
+            `gh pr comment ${{ github.event.pull_request.number }} --body-file <arquivo>`.
+            Nao aprovar nem reprovar a PR.
+          claude_args: --allowedTools "Bash(git diff:*),Bash(git log:*),Bash(gh pr comment:*),Read,Grep,Glob,Skill"
