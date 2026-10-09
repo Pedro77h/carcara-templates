@@ -11,7 +11,7 @@ Ler apenas os arquivos tocados e seus vizinhos diretos (chamadores, teste corres
 
 ## Eixos
 
-**1. Arquitetura e direção de dependência** (regra dura do `CLAUDE.md` e do `docs/ARQUITETURA.md`)
+**1. Arquitetura e direção de dependência** (regra dura do `CLAUDE.md` e do `docs/arquitetura/ARQUITETURA.md`)
 - `controller` → só `components`. Controller injetando service/repository/mapper é violação.
 - `components` → components de outros módulos + services do próprio módulo. Nunca service de outro módulo.
 - `services` → repositories e outros services. Service nunca injeta component.
@@ -50,8 +50,8 @@ Ler apenas os arquivos tocados e seus vizinhos diretos (chamadores, teste corres
 
 **6. Testes e documentação**
 - Código novo em `services`/`components`/`mappers` sem teste JUnit 5 + BDDMockito + AssertJ (given/when/then); cobertura ≥80%.
-- Endpoint novo ou alterado sem entrada em `docs/API.md` no mesmo PR.
-- Regra de negócio nova sem entrada em `docs/REGRAS_DE_NEGOCIO.md`; entidade ou coluna nova sem entrada em `docs/ENTIDADES.md`.
+- Endpoint novo ou alterado sem entrada em `docs/arquitetura/API.md` no mesmo PR.
+- Regra de negócio nova sem entrada em `docs/REGRAS_DE_NEGOCIO.md`; entidade ou coluna nova sem entrada em `docs/arquitetura/ENTIDADES.md`.
 - Dependência nova no `pom.xml` sem aprovação do mantenedor — sinalizar sempre.
 
 ## Saída

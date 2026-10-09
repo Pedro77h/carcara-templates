@@ -6,7 +6,7 @@ set -euo pipefail
 # a senha nova e exclusão da conta.
 #
 # É a única validação que inclui Flyway real, perfil ativo, variável de ambiente e proxy. Nenhum
-# *FlowTest cobre isso: eles sobem H2 em processo. Ver docs/VALIDACAO.md.
+# *FlowTest cobre isso: eles sobem H2 em processo. Ver docs/validacao/VALIDACAO.md.
 #
 # Uso:
 #   scripts/smoke.sh                                    # local, http://localhost:8080

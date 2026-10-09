@@ -56,7 +56,7 @@ Ordem de preferência, do mais forte para o mais fraco. Use o mais forte que o p
 
 1. **Smoke contra a aplicação de pé** — sobe Postgres e a aplicação, percorre o fluvo crítico por
    HTTP de verdade. É a única prova que inclui Flyway real, perfil, variável de ambiente e proxy.
-   Com a feature `rest`: `scripts/smoke.sh` (ver `docs/API.md`).
+   Com a feature `rest`: `scripts/smoke.sh` (ver `../arquitetura/API.md`).
 2. **`*FlowTest`** — contexto Spring completo, H2 em modo PostgreSQL com Flyway rodando, chamadas
    pela porta de entrada. Pega quebra de contrato, autorização e transação; **não** pega problema
    de ambiente nem diferença de dialeto do Postgres.

@@ -57,8 +57,8 @@ awk -F, 'NR>1 {m+=$8; c+=$9} END {
 }' "$CSV"
 
 echo "==> [4/4] Registro de achados"
-REGISTRO=docs/REGISTRO_ACHADOS.md
-ACERVO=docs/REGISTRO_ACHADOS_ARQUIVO.md
+REGISTRO=docs/achados/REGISTRO_ACHADOS.md
+ACERVO=docs/achados/REGISTRO_ACHADOS_ARQUIVO.md
 MAX_ABERTOS=30
 
 if [ -f "$REGISTRO" ]; then

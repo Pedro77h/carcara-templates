@@ -78,7 +78,7 @@ Encerrados (vão para o acervo): `Corrigido`, `Validado`, `Risco aceito`, `Desca
 
 `Corrigido` é "o código mudou". `Validado` é "a correção foi provada no mesmo nível em que o
 problema foi observado" — achado visto em homologação fecha com prova de homologação, não com teste
-unitário. Ver `VALIDACAO.md`.
+unitário. Ver [`../validacao/VALIDACAO.md`](../validacao/VALIDACAO.md).
 
 ## Índice
 

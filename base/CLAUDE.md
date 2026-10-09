@@ -2,7 +2,7 @@
 
 Regras do repositório para o Claude Code. Fonte de verdade completa: `AI_RULES.md` (a mesma política existe replicada em `.cursor/ai_rules.json`, `.ag/ai_rules.toml` e `.github/ai-rules.yml` para outros assistentes — não editar uma sem editar as outras).
 
-**Antes de escrever código, leia `docs/`** — o índice está no `README.md`. Em especial `docs/ARQUITETURA.md` (direção de dependência entre camadas) e `docs/REGRAS_DE_NEGOCIO.md` (o que o produto faz e por quê).
+**Antes de escrever código, leia `docs/`** — o índice está no `README.md`. Em especial `docs/arquitetura/ARQUITETURA.md` (direção de dependência entre camadas) e `docs/REGRAS_DE_NEGOCIO.md` (o que o produto faz e por quê).
 
 ## Domínio do produto
 
@@ -36,10 +36,10 @@ Módulos implementados até agora: `auth`, `user`, `email`, `health`.
 7. **Usar `Objects.isNull(x)`/`Objects.nonNull(x)`** em vez de `x == null`/`x != null`.
 8. **Nunca escrever comentários no código** (nem `//` nem `/** */`), incluindo testes — nomes de classes/métodos/variáveis devem se auto-explicar. Exceção: Javadoc exigido por ferramentas externas (ex: descrições de `@Schema`/`@Operation` do OpenAPI, que são conteúdo voltado ao usuário final, não comentário de código).
 9. **Tratar dado pessoal com cuidado**: todo campo pessoal novo precisa de finalidade declarada; se o fluxo funciona sem o dado, não colete. Dado pessoal, token e credencial nunca vão para log, nem em `DEBUG`, nem em mensagem de exceção — logs citam só identificadores técnicos (`user.getId()`, nunca `user.getFullName()`). Consulta de dado de usuário sempre escopada pelo dono na própria query, com `404` (nunca `403`) para registro de terceiro. Nada em query param ou path de URL que não possa aparecer no `access_log` do nginx.
-10. **Manter `docs/API.md` atualizado**: todo endpoint novo ou alterado entra nesse documento vivo no mesmo PR — método, autorização, campos e validações, resposta de sucesso, erros de negócio e `curl` de exemplo.
+10. **Manter `docs/arquitetura/API.md` atualizado**: todo endpoint novo ou alterado entra nesse documento vivo no mesmo PR — método, autorização, campos e validações, resposta de sucesso, erros de negócio e `curl` de exemplo.
 11. **Usar builder pattern (Lombok `@Builder`), nunca `record`**, para DTOs de resposta e objetos de conversão retornados por `mappers`/`services` (ex: resultado de `toXxx(...)`). Padrão: `@Getter @Builder @NoArgsConstructor @AllArgsConstructor`, campos privados, construção via `.builder()...build()`. DTOs de request (corpo de requisição validado com `@Valid`) continuam como `record`.
-12. **Validar proporcionalmente ao risco, e provar o fluxo ponta a ponta** (`docs/VALIDACAO.md`): mudança de baixo risco não precisa de teste, mudança de alto risco (auth, roles, migration, `config/`, contrato de API, scheduler) exige `./mvnw verify` **mais** validação e2e do fluxo — `./mvnw verify` não abre a aplicação. Nunca inventar resultado de validação: dizer o que rodou, o que não rodou, o comando recomendado e o risco residual.
-13. **Registrar achado em `docs/REGISTRO_ACHADOS.md`**, com a porta de entrada estreita: só entra achado de severidade alta/crítica, de origem externa (usuário, homologação, teste que falhou, porta de qualidade) ou pedido explicitamente. Achado baixo/médio que você mesmo encontrou revisando seu próprio trabalho **não entra** — corrija na hora ou descarte, e nada corrigido dentro da mesma tarefa vira achado (o commit já é o rastro). Achado encerrado sai do registro vivo e vai para o acervo; defeito que volta é achado novo citando o arquivado, nunca reabertura.
+12. **Validar proporcionalmente ao risco, e provar o fluxo ponta a ponta** (`docs/validacao/VALIDACAO.md`): mudança de baixo risco não precisa de teste, mudança de alto risco (auth, roles, migration, `config/`, contrato de API, scheduler) exige `./mvnw verify` **mais** validação e2e do fluxo — `./mvnw verify` não abre a aplicação. Nunca inventar resultado de validação: dizer o que rodou, o que não rodou, o comando recomendado e o risco residual.
+13. **Registrar achado em `docs/achados/REGISTRO_ACHADOS.md`**, com a porta de entrada estreita: só entra achado de severidade alta/crítica, de origem externa (usuário, homologação, teste que falhou, porta de qualidade) ou pedido explicitamente. Achado baixo/médio que você mesmo encontrou revisando seu próprio trabalho **não entra** — corrija na hora ou descarte, e nada corrigido dentro da mesma tarefa vira achado (o commit já é o rastro). Achado encerrado sai do registro vivo e vai para o acervo; defeito que volta é achado novo citando o arquivado, nunca reabertura.
 
 ## Papel em revisão de código
 
@@ -62,7 +62,7 @@ Spring Boot (Java) em `src/main/java/br/com/template/core/`, organizado por mód
 - `core/components` — componentes Spring compartilhados entre módulos; mesma regra do `core/utils`, mas para beans gerenciados
 - `core/exceptions` — exceções compartilhadas entre módulos
 
-**Direção das dependências entre camadas** (regra dura, vale para código novo e refatoração — detalhe e armadilhas em `docs/ARQUITETURA.md`):
+**Direção das dependências entre camadas** (regra dura, vale para código novo e refatoração — detalhe e armadilhas em `docs/arquitetura/ARQUITETURA.md`):
 
 - `controller` → **só** `components`. Controller nunca injeta service, repository ou mapper.
 - `components` → outros `components` e os `services` do próprio módulo. Precisa de algo de outro módulo? Passa pelo `component` daquele módulo, nunca pelo service dele.
@@ -77,7 +77,7 @@ Um módulo que **não é dono de dado** pode não ter service nem repository —
 
 ## Autenticação
 
-Fluxo JWT stateless: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh` (ver `README.md` e `docs/API.md`). Roles nunca são confiadas a partir do cliente — sempre validadas no back-end via banco de dados.
+Fluxo JWT stateless: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh` (ver `README.md` e `docs/arquitetura/API.md`). Roles nunca são confiadas a partir do cliente — sempre validadas no back-end via banco de dados.
 
 Troca de senha autenticada revoga **todas** as sessões (via `sessionVersion` no token) e devolve um par de tokens novo — o cliente precisa substituir o que guarda.
 

@@ -10,7 +10,7 @@
     },
     {
       "id": "follow-architecture",
-      "description": "Preservar a estrutura por módulo e a direção de dependência: controller -> só components; components -> components de outros módulos e services do próprio módulo; services -> repositories e outros services, nunca components. Detalhe em docs/ARQUITETURA.md",
+      "description": "Preservar a estrutura por módulo e a direção de dependência: controller -> só components; components -> components de outros módulos e services do próprio módulo; services -> repositories e outros services, nunca components. Detalhe em docs/arquitetura/ARQUITETURA.md",
       "paths": [
         "src/main/java/**"
       ]
@@ -74,10 +74,10 @@
     },
     {
       "id": "living-api-doc",
-      "description": "Todo endpoint novo ou alterado entra em docs/API.md no mesmo PR: método, autorização, campos e validações, resposta, erros e curl de exemplo",
+      "description": "Todo endpoint novo ou alterado entra em docs/arquitetura/API.md no mesmo PR: método, autorização, campos e validações, resposta, erros e curl de exemplo",
       "paths": [
         "src/main/java/**/controller/**",
-        "docs/API.md"
+        "docs/arquitetura/API.md"
       ]
     },
     {
@@ -90,7 +90,7 @@
     },
     {
       "id": "risk-proportional-validation",
-      "description": "Validar proporcionalmente ao risco e provar o fluxo ponta a ponta: baixo risco sem teste, medio risco com teste do que mudou, alto risco (auth, roles, multi-tenancy, migration, entidade, config/, contrato de API, scheduler, fila) com ./mvnw verify mais validacao e2e do fluxo. ./mvnw verify nao abre a aplicacao. Nunca inventar resultado: dizer o que rodou, o que nao rodou, o comando recomendado e o risco residual. Referencia: docs/VALIDACAO.md",
+      "description": "Validar proporcionalmente ao risco e provar o fluxo ponta a ponta: baixo risco sem teste, medio risco com teste do que mudou, alto risco (auth, roles, multi-tenancy, migration, entidade, config/, contrato de API, scheduler, fila) com ./mvnw verify mais validacao e2e do fluxo. ./mvnw verify nao abre a aplicacao. Nunca inventar resultado: dizer o que rodou, o que nao rodou, o comando recomendado e o risco residual. Referencia: docs/validacao/VALIDACAO.md",
       "paths": [
         "src/main/java/**",
         "src/main/resources/db/**",
@@ -99,10 +99,10 @@
     },
     {
       "id": "findings-registry",
-      "description": "Achado (bug, gap, inconsistencia, risco operacional) vai em docs/REGISTRO_ACHADOS.md, nunca em arquivo avulso. Porta estreita: so entra severidade alta/critica, ou qualquer severidade de origem externa (usuario, homologacao, falha de teste ou de porta de qualidade), ou pedido explicito. Achado baixo/medio encontrado pela propria IA revisando o proprio trabalho nao entra. Achado encerrado vai para docs/REGISTRO_ACHADOS_ARQUIVO.md; defeito que volta e achado novo citando o arquivado. Teto de 30 abertos, verificado no pre-push",
+      "description": "Achado (bug, gap, inconsistencia, risco operacional) vai em docs/achados/REGISTRO_ACHADOS.md, nunca em arquivo avulso. Porta estreita: so entra severidade alta/critica, ou qualquer severidade de origem externa (usuario, homologacao, falha de teste ou de porta de qualidade), ou pedido explicito. Achado baixo/medio encontrado pela propria IA revisando o proprio trabalho nao entra. Achado encerrado vai para docs/achados/REGISTRO_ACHADOS_ARQUIVO.md; defeito que volta e achado novo citando o arquivado. Teto de 30 abertos, verificado no pre-push",
       "paths": [
-        "docs/REGISTRO_ACHADOS.md",
-        "docs/REGISTRO_ACHADOS_ARQUIVO.md"
+        "docs/achados/REGISTRO_ACHADOS.md",
+        "docs/achados/REGISTRO_ACHADOS_ARQUIVO.md"
       ]
     }
   ],

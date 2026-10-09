@@ -1,7 +1,8 @@
 # Regras de negócio
 
 > Documento vivo. É aqui que mora **o que o produto faz e por quê** — não como o código está
-> organizado (isso é `ARQUITETURA.md`) nem o contrato das rotas (isso é `API.md`).
+> organizado (isso é `arquitetura/ARQUITETURA.md`) nem o contrato das rotas (isso é
+> `arquitetura/API.md`).
 > Toda regra nova entra aqui no mesmo PR que a implementa.
 
 <!-- skill:regras:inicio -->

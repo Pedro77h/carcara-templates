@@ -52,7 +52,7 @@ Este documento define regras que assistentes de código (Copilot, Claude, Cursor
   - `repositories` → acesso a dados (JPA/JPQL)
   - `dtos` → transfer objects
   - `mappers` → mapeamento entre entidades e DTOs
-- **Direção de dependência é regra dura** (detalhe em `docs/ARQUITETURA.md`): `controller` → só `components`; `components` → outros `components` e os `services` do próprio módulo; `services` → `repositories` e outros `services`, nunca `components`
+- **Direção de dependência é regra dura** (detalhe em `docs/arquitetura/ARQUITETURA.md`): `controller` → só `components`; `components` → outros `components` e os `services` do próprio módulo; `services` → `repositories` e outros `services`, nunca `components`
 - **Princípios:** SOLID, separação de responsabilidades, DDD quando apropriado
 - **Ação da IA:** Apontar como comentário quando a camada ou a direção de dependência for violada
 
@@ -103,10 +103,10 @@ Este documento define regras que assistentes de código (Copilot, Claude, Cursor
 - Nada em query param ou path de URL que não possa aparecer no `access_log` do nginx
 - **Ação da IA:** Apontar quando um PR logar dado pessoal, expor dado de outro usuário, ou coletar campo sem finalidade
 
-### 1️⃣1️⃣ Mantenha `docs/API.md` atualizado a cada endpoint
-- `docs/API.md` é documento vivo consumido pelo time de front: todo endpoint novo/alterado entra lá no mesmo PR
+### 1️⃣1️⃣ Mantenha `docs/arquitetura/API.md` atualizado a cada endpoint
+- `docs/arquitetura/API.md` é documento vivo consumido pelo time de front: todo endpoint novo/alterado entra lá no mesmo PR
 - Cada entrada traz: método + caminho, quem pode chamar, campos e validações do corpo, resposta de sucesso com status, erros de negócio e `curl` de exemplo
-- **Ação da IA:** Apontar via comentário quando um PR adicionar ou mudar um endpoint sem atualizar `docs/API.md`
+- **Ação da IA:** Apontar via comentário quando um PR adicionar ou mudar um endpoint sem atualizar `docs/arquitetura/API.md`
 
 ### 1️⃣2️⃣ Use builder pattern (Lombok `@Builder`), nunca `record`, para objetos de conversão de DTO
 - Vale para DTOs de **resposta**, resultados de mapper (`toXxx`) e objetos de retorno de service que carregam dados de/para outra camada
@@ -120,14 +120,14 @@ Este documento define regras que assistentes de código (Copilot, Claude, Cursor
 - Alto risco (auth, roles, `sessionVersion`, multi-tenancy, migration, entidade, `config/`, contrato de API, scheduler, fila): `./mvnw verify` **mais** validação e2e do fluxo
 - `./mvnw verify` **não abre a aplicação**: não prova Flyway real, perfil, variável de ambiente nem cabeçalho de proxy. Mudança que altera comportamento de fluxo termina com a prova de que o fluxo roda
 - **Nunca inventar resultado de validação:** dizer o que rodou, o que não foi possível rodar, o comando recomendado e o risco residual
-- Referência: `docs/VALIDACAO.md`
+- Referência: `docs/validacao/VALIDACAO.md`
 - **Ação da IA:** Apontar via comentário quando um PR de alto risco não trouxer teste de fluxo, ou quando o relato de validação afirmar algo que não foi executado
 
 ### 1️⃣4️⃣ Registre achado no lugar certo, com porta estreita
-- Achado (bug, gap, inconsistência, risco operacional) vai em `docs/REGISTRO_ACHADOS.md`; nunca em arquivo avulso
+- Achado (bug, gap, inconsistência, risco operacional) vai em `docs/achados/REGISTRO_ACHADOS.md`; nunca em arquivo avulso
 - **Só entra:** severidade alta/crítica de qualquer origem; qualquer severidade de origem externa (usuário, homologação, falha real de teste ou de porta de qualidade); ou pedido explícito do mantenedor
 - **Não entra:** achado baixo/médio que a própria IA encontrou revisando o próprio trabalho — corrija na hora ou descarte. Nada corrigido dentro da mesma tarefa vira achado: o commit já é o rastro
-- Pesquise antes de criar, inclusive no acervo (`docs/REGISTRO_ACHADOS_ARQUIVO.md`); se já existe, atualize
+- Pesquise antes de criar, inclusive no acervo (`docs/achados/REGISTRO_ACHADOS_ARQUIVO.md`); se já existe, atualize
 - Achado encerrado sai do registro vivo e vai para o acervo. Defeito que volta é achado **novo** citando o identificador arquivado, nunca reabertura do bloco
 - Teto de 30 achados abertos, verificado no `.githooks/pre-push`
 - **Ação da IA:** Apontar quando um PR criar arquivo avulso de achado, registrar observação própria de baixa severidade, ou deixar achado encerrado no registro vivo
