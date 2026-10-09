@@ -68,7 +68,7 @@ Secrets do repositório (Settings → Secrets → Actions):
 | `EC2_HOST` | IP ou DNS da instância |
 | `EC2_USER` | usuário de SSH (ex.: `ubuntu`) |
 | `EC2_SSH_KEY` | chave privada com acesso à instância |
-| `ANTHROPIC_API_KEY` | opcional, habilita a revisão arquitetural na PR |
+| `ANTHROPIC_API_KEY` | opcional, e não é do deploy: habilita a revisão arquitetural em `pr-review.yml` |
 
 ## Verificação
 
