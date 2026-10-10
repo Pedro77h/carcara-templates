@@ -42,6 +42,9 @@ Inserir por marcador em vez de mesclar XML é deliberado: sem parser, sem reorde
 dependências e sem reformatação do arquivo inteiro a cada geração. O preço é que o bloco precisa
 vir já indentado com tabs, como o resto do POM.
 
+Migration de feature usa a versão seguinte às do base (`V0.0.5__...` é da `multitenant`). Feature
+nova com migration pega a próxima livre e registra aqui, para duas features nunca colidirem.
+
 Arquivo da feature que já existe no base **substitui** o do base. Use com parcimônia e deixe
 registrado no `FEATURE.md` — substituição silenciosa de arquivo é difícil de depurar depois.
 
@@ -52,6 +55,8 @@ registrado no `FEATURE.md` — substituição silenciosa de arquivo é difícil 
 | `rest` | controllers de `auth` e `/api/me`, `AuthAdvice`, rotas públicas de `/api/auth/**`, `scripts/smoke.sh` | `config/security/SecurityConfig.java`, `docs/arquitetura/API.md` |
 | `grpc` | servidor gRPC na `9090` autenticado pelo mesmo `JwtAuthenticationProvider`, serviço de exemplo `MeService` | — |
 | `kafka` | produtor com publicação após o commit (`DomainEvent` + `DomainEventPublisher`) | — |
+| `storage` | `FileStorageService` + disco local com guarda de path traversal, `400`/`413` no advice | — |
+| `multitenant` | `@TenantId` do Hibernate, `TenantInterceptor` (`X-Tenant-Id` só para admin da plataforma), vínculo `user_tenants`, `docs/arquitetura/MULTITENANT.md` | — |
 | `deploy` | EC2 + systemd + nginx + workflow de deploy, `DEPLOY.md` | — |
 
 ## O que o base sempre traz
