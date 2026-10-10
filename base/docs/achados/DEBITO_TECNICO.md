@@ -21,9 +21,9 @@ que troca duplicação boba por abstração difícil de ler.
 **Saída, se incomodar:** extrair só `generate()`/`hash()` para um utilitário em `core/utils` e
 manter os dois services. Não vale criar `OneTimeTokenService<T>`.
 
-### `JwtAuthenticationFilter` consulta o banco a cada requisição
+### `JwtAuthenticationProvider` consulta o banco a cada requisição
 
-O filtro carrega o usuário por `id` em toda chamada autenticada, para conferir
+O provider (usado pelo filtro HTTP e, com a feature `grpc`, pela porta gRPC) carrega o usuário por `id` em toda chamada autenticada, para conferir
 `passwordChangedAt`/`sessionVersion` e as roles no banco (roles nunca são confiadas do cliente).
 
 **Custo:** uma query por requisição autenticada.

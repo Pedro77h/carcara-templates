@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "br.com.template.core.proto.user";
+
+package br.com.template.core.user;
+
+// Exemplo de serviço gRPC autenticado: o próprio perfil de quem chama.
+// O token vai no metadata "authorization: Bearer <accessToken>", o mesmo emitido pelo login.
+service MeService {
+  rpc getMe(Empty) returns (MeResponse);
+}
+
+message Empty {}
+
+message MeResponse {
+  int64 id = 1;
+  string full_name = 2;
+  string email = 3;
+  // Vazio quando o usuário não informou telefone (proto3 não tem null).
+  string phone = 4;
+  string principal_role = 5;
+  bool email_verified = 6;
+}

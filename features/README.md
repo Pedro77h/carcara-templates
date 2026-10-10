@@ -50,6 +50,7 @@ registrado no `FEATURE.md` — substituição silenciosa de arquivo é difícil 
 | Feature | O que acrescenta | Substitui |
 |---|---|---|
 | `rest` | controllers de `auth` e `/api/me`, `AuthAdvice`, rotas públicas de `/api/auth/**`, `scripts/smoke.sh` | `config/security/SecurityConfig.java`, `docs/arquitetura/API.md` |
+| `grpc` | servidor gRPC na `9090` autenticado pelo mesmo `JwtAuthenticationProvider`, serviço de exemplo `MeService` | — |
 | `kafka` | produtor com publicação após o commit (`DomainEvent` + `DomainEventPublisher`) | — |
 | `deploy` | EC2 + systemd + nginx + workflow de deploy, `DEPLOY.md` | — |
 

@@ -142,6 +142,7 @@
 						<exclude>**/models/**</exclude>
 						<exclude>**/*Config.class</exclude>
 						<exclude>**/*Properties.class</exclude>
+						<exclude>**/proto/**</exclude>
 					</excludes>
 				</configuration>
 				<executions>

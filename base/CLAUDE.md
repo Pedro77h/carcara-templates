@@ -20,7 +20,7 @@ Regras do repositório para o Claude Code. Fonte de verdade completa: `AI_RULES.
     Enquanto não houver conteúdo aqui, a referência é docs/REGRAS_DE_NEGOCIO.md.
 -->
 
-Stack: Spring Boot 4, Java 21, PostgreSQL, schema versionado via **Flyway** (`src/main/resources/db/migration`), JWT stateless (access + refresh, `JwtAuthenticationFilter`).
+Stack: Spring Boot 4, Java 21, PostgreSQL, schema versionado via **Flyway** (`src/main/resources/db/migration`), JWT stateless (access + refresh; política do token em `JwtAuthenticationProvider`, usada pelo `JwtAuthenticationFilter` e por qualquer outra porta).
 
 Módulos implementados até agora: `auth`, `user`, `email`, `health`.
 <!-- skill:dominio:fim -->

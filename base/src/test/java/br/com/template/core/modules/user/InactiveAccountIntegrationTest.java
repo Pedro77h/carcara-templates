@@ -61,8 +61,8 @@ class InactiveAccountIntegrationTest extends CoreTestServer {
     }
 
     @Test
-    @DisplayName("should count from the registration when the woman never logged in")
-    void shouldCountFromRegistrationWhenSheNeverLoggedIn() {
+    @DisplayName("should count from the registration when the user never logged in")
+    void shouldCountFromRegistrationWhenNeverLoggedIn() {
         Long neverLoggedRecent = save("nova", null, OffsetDateTime.now().minusMonths(2)).getId();
         Long neverLoggedOld = save("antiga", null, OffsetDateTime.now().minusMonths(8)).getId();
 

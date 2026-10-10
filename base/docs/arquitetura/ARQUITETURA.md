@@ -72,6 +72,11 @@ config/
 └── openapi/             OpenApiConfig (Swagger UI em /swagger-ui.html)
 ```
 
+A política do token (assinatura, `issuer`, tipo `access`, usuário existente, corte por troca de
+senha, sessão revogada) mora **só** no `JwtAuthenticationProvider`. O `JwtAuthenticationFilter`
+apenas extrai o `Bearer` e delega. Toda nova porta de entrada (gRPC, WebSocket, consumidor com
+token) reaproveita o provider — nunca reimplementa a validação.
+
 Cada módulo com exceções de negócio ganha o seu próprio advice (`<Modulo>Advice`), que traduz exceção em status. `NotFoundAdvice` é o único global.
 
 ## Consulta: JPQL ou Specification
