@@ -1,10 +1,12 @@
-name: Template matrix
+name: spring matrix
 
 # Gera cada combinação de features e roda nela o pre-push do projeto gerado.
 on:
   push:
     branches: [main]
+    paths: ['spring/**', '.github/workflows/spring-matrix.yml']
   pull_request:
+    paths: ['spring/**', '.github/workflows/spring-matrix.yml']
 
 jobs:
   matrix:
@@ -19,4 +21,4 @@ jobs:
           cache: maven
       - name: Identidade do git (commit inicial do projeto gerado)
         run: git config --global user.name ci && git config --global user.email ci@example.com
-      - run: scripts/verify-matrix.sh "$RUNNER_TEMP/matrix"
+      - run: spring/scripts/verify-matrix.sh "$RUNNER_TEMP/matrix"

@@ -1,6 +1,6 @@
 # core
 
-Backend Spring Boot gerado a partir do [template](https://github.com/Pedro77h/spring-template).
+Backend Spring Boot gerado a partir do [template](https://github.com/Pedro77h/carcara-templates/tree/main/spring).
 
 > **Antes de escrever código, leia `docs/`.** É lá que mora o contexto que o código não conta.
 

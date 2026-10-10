@@ -1,55 +1,25 @@
-# spring-template
+# carcara-templates
 
-Template de backend Spring Boot 4 / Java 21 **IA-first**: um `base/` que sempre entra e `features/`
-opcionais, combinados por `scripts/generate.sh`. Normalmente quem chama o script é o comando
-`carcara-new-project` (repo `carcara-skills`), que também entrevista as regras de negócio e
-preenche `docs/REGRAS_DE_NEGOCIO.md`.
+Templates de projeto do Carcará. Cada pasta da raiz é um template independente, com o próprio
+gerador; quem os usa normalmente é o comando `carcara-new-project` do
+[carcara-skills](https://github.com/Pedro77h/carcara-skills), que pergunta qual template usar,
+gera o projeto e entrevista as regras de negócio.
 
-## Gerar um projeto
-
-```bash
-scripts/generate.sh \
-  --name minha-loja \
-  --group br.com.acme \
-  --package br.com.acme.loja \
-  --features rest,kafka \
-  --out ../minha-loja
-```
-
-| Parâmetro | Vira |
+| Template | O que é |
 |---|---|
-| `--name` | `artifactId`, `spring.application.name`, banco local, issuer do JWT, nome do serviço no deploy; `MinhaLojaApplication` |
-| `--group` | `groupId` |
-| `--package` | pacote Java (os diretórios são movidos) |
-| `--features` | lista separada por vírgula; vazio = só o base |
-| `--no-git` | não faz `git init` nem o commit inicial |
+| [`spring/`](spring/README.md) | Backend Spring Boot 4 / Java 21 IA-first: JPA, Security/JWT, Flyway, OpenAPI e features opcionais (REST, gRPC, Kafka, storage, multi-tenant, deploy) |
 
-O projeto sai com `git init`, `core.hooksPath=.githooks` e um commit inicial — o `pre-push` já vale
-no primeiro push.
+## Anatomia de um template
 
-## O que vem
-
-- **`base/`** — sempre. JPA, Security/JWT, OpenAPI, Flyway, perfis, módulos `auth`/`user`/`email`/
-  `health`, e a camada de governança de IA (`AI_RULES.md` + réplicas, `CLAUDE.md`, `docs/`). Ver
-  `base/README.md`.
-- **`features/`** — opcionais: `rest`, `grpc`, `kafka`, `storage`, `multitenant`, `deploy`. O
-  que cada uma traz, a convenção de pasta e o formato dos snippets estão em
-  [`features/README.md`](features/README.md); o porquê de cada uma no `FEATURE.md` dela.
-
-## Mexendo no template
-
-`base/` é um projeto Maven de verdade: `cd base && ./mvnw verify`. Uma feature só se testa
-combinada, então a prova é a matriz:
-
-```bash
-scripts/verify-matrix.sh            # gera 6 combinações e roda o pre-push de cada uma
+```
+<template>/
+├── README.md     como gerar e como mexer no template
+├── base/         o que todo projeto gerado recebe
+├── features/     recortes opcionais
+└── scripts/      gerador não interativo + verificação
 ```
 
-É o mesmo que roda no CI (`.github/workflows/matrix.yml`). Feature nova entra na lista `COMBOS`
-do script, sozinha e combinada com as que ela toca.
-
-O nome `core` e o pacote `br.com.template.core` do base são os tokens que o `generate.sh`
-substitui. A troca é por padrão pontual, não por palavra solta — `core/utils`, `core.hooksPath` e
-`flyway-core` não podem mudar. Ao introduzir um uso novo do nome do projeto, prefira
-`${spring.application.name}`; se precisar ser literal, confira que a matriz gera sem sobra
-(`grep -rnw core` no projeto gerado).
+O contrato com o `carcara-new-project` é o gerador não interativo (`scripts/generate.sh` no
+`spring`) e os marcadores `<!-- skill:... -->` onde a skill escreve a entrevista. Template novo
+segue a mesma anatomia, ganha um workflow `.github/workflows/<template>-matrix.yml` e um guia em
+`carcara-skills/skills/carcara-new-project/templates/<template>.md`.
