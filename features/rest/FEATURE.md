@@ -51,9 +51,7 @@ e que o identificador gravado em `auth_attempts` **não** contém o e-mail nem o
 com o `AuthFlowTest`: a suíte roda em H2 com o perfil `test`, então Postgres de verdade, perfil
 `dev`/`prod`, variável de ambiente e proxy só aparecem no smoke. Foi ele que achou o
 `hibernate.dialect` fixado no arquivo principal, que fazia todo token tomar `401` depois da primeira
-troca de senha enquanto o `AuthFlowTest` jurava que funcionava — na época o arquivo de teste
-substituía o principal em vez de complementá-lo. Ver `ACH-20261009-001` em
-`docs/achados/REGISTRO_ACHADOS_ARQUIVO.md`.
+troca de senha enquanto o `AuthFlowTest` jurava que funcionava.
 
 ## O cadastro responde 202 sempre, e isso é contrato
 

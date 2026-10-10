@@ -1,8 +1,8 @@
 # spring-template
 
 Template de backend Spring Boot 4 / Java 21 **IA-first**: um `base/` que sempre entra e `features/`
-opcionais, combinados por `scripts/generate.sh`. Normalmente quem chama o script é a skill
-`novo-projeto-spring` (repo `template-skills`), que também entrevista as regras de negócio e
+opcionais, combinados por `scripts/generate.sh`. Normalmente quem chama o script é o comando
+`carcara-new-project` (repo `carcara-skills`), que também entrevista as regras de negócio e
 preenche `docs/REGRAS_DE_NEGOCIO.md`.
 
 ## Gerar um projeto

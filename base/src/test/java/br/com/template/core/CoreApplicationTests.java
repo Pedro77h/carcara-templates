@@ -22,7 +22,8 @@ class CoreApplicationTests extends CoreTestServer {
 	@Test
 	@DisplayName("should load the main application.properties under the test overrides, never the local profile")
 	void shouldLoadMainPropertiesUnderTestOverrides() {
-		// Só existe no principal: se sumir, o arquivo de teste voltou a substituí-lo (ACH-20261009-001).
+		// Só existe no principal: se sumir, o arquivo de teste voltou a substituí-lo
+		// (um application.properties na raiz de src/test/resources esconde o principal).
 		assertThat(environment.getProperty("app.auth.rate-limit.max-attempts-per-origin")).isEqualTo("20");
 		assertThat(environment.getActiveProfiles()).containsExactly("test");
 		assertThat(environment.getProperty("spring.flyway.locations")).doesNotContain("migration-dev");
