@@ -42,10 +42,6 @@ produção aponte `STORAGE_LOCAL_DIR` para um volume persistente, ou implemente 
 (`@ConditionalOnProperty(name = "app.storage.provider", havingValue = "s3")`) antes de ir ao ar.
 Com a feature `deploy`, inclua o diretório no backup.
 
-O `@Value` traz um default próprio (`${java.io.tmpdir}/uploads`) porque o
-`src/test/resources/application.properties` substitui o principal e o snippet não chega aos
-testes — ver `ACH-20261009-001`.
-
 ## Testes
 
 `LocalFileStorageServiceTest`: guarda e lê de volta, nome com diretório (Unix e Windows) reduzido,

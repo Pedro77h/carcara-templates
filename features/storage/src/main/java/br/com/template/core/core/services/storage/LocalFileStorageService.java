@@ -22,7 +22,7 @@ public class LocalFileStorageService implements FileStorageService {
 
     private final Path baseDirectory;
 
-    public LocalFileStorageService(@Value("${app.storage.local-dir:${java.io.tmpdir}/uploads}") String baseDir) {
+    public LocalFileStorageService(@Value("${app.storage.local-dir}") String baseDir) {
         this.baseDirectory = Paths.get(baseDir).toAbsolutePath().normalize();
     }
 
