@@ -1,0 +1,22 @@
+name: Template matrix
+
+# Gera cada combinação de features e roda nela o pre-push do projeto gerado.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Identidade do git (commit inicial do projeto gerado)
+        run: git config --global user.name ci && git config --global user.email ci@example.com
+      - run: scripts/verify-matrix.sh "$RUNNER_TEMP/matrix"

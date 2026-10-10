@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PingControllerTest {
 
-    private final PingController pingController = new PingController();
+    private final PingController pingController = new PingController("core");
 
     @Test
     @DisplayName("should answer 200 with the service status")

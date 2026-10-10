@@ -1,7 +1,8 @@
 # features
 
 Cada pasta aqui é um recorte opcional do template. A skill de geração pergunta quais entram; o
-`base/` entra sempre.
+`base/` entra sempre. Quem aplica as convenções abaixo é o `scripts/generate.sh`, e quem prova
+que continuam valendo é o `scripts/verify-matrix.sh`.
 
 ## Anatomia de uma feature
 
