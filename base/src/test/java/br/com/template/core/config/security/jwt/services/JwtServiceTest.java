@@ -1,6 +1,7 @@
 package br.com.template.core.config.security.jwt.services;
 
 import br.com.template.core.config.security.jwt.models.JwtProperties;
+import io.jsonwebtoken.JwtException;
 import br.com.template.core.modules.user.models.Role;
 import br.com.template.core.modules.user.models.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,26 +110,20 @@ class JwtServiceTest {
         }
 
         @Test
-        @DisplayName("should report a valid token as not expired")
-        void shouldReportValidTokenAsNotExpired() {
-            String token = jwtService.generateAccessToken(user);
-
-            assertThat(jwtService.isTokenExpired(token)).isFalse();
+        @DisplayName("should refuse a malformed token")
+        void shouldRefuseMalformedToken() {
+            assertThatThrownBy(() -> jwtService.parseAccessToken("nao-e-um-token"))
+                    .isInstanceOf(JwtException.class);
         }
 
         @Test
-        @DisplayName("should report a malformed token as expired")
-        void shouldReportMalformedTokenAsExpired() {
-            assertThat(jwtService.isTokenExpired("nao-e-um-token")).isTrue();
-        }
-
-        @Test
-        @DisplayName("should report an already expired token as expired")
-        void shouldReportExpiredTokenAsExpired() {
+        @DisplayName("should refuse an already expired token")
+        void shouldRefuseExpiredToken() {
             JwtService expiredJwtService = new JwtService(new JwtProperties(SECRET, "core", -1, -1));
             String token = expiredJwtService.generateAccessToken(user);
 
-            assertThat(expiredJwtService.isTokenExpired(token)).isTrue();
+            assertThatThrownBy(() -> expiredJwtService.parseAccessToken(token))
+                    .isInstanceOf(JwtException.class);
         }
     }
 }

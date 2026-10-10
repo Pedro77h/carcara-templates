@@ -1,12 +1,8 @@
 package br.com.template.core.config.security.jwt.filters;
 
 import br.com.template.core.config.security.jwt.models.AuthenticatedUserPrincipal;
-import br.com.template.core.config.security.jwt.services.JwtService;
-import br.com.template.core.modules.user.components.UserComponent;
-import br.com.template.core.modules.user.models.Role;
-import br.com.template.core.modules.user.models.User;
-import io.jsonwebtoken.JwtException;
-import jakarta.persistence.EntityNotFoundException;
+import br.com.template.core.config.security.jwt.models.JwtAuthenticationToken;
+import br.com.template.core.config.security.jwt.services.JwtAuthenticationProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -20,15 +16,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
@@ -36,9 +34,7 @@ class JwtAuthenticationFilterTest {
     private static final String TOKEN = "token-valido";
 
     @Mock
-    private JwtService jwtService;
-    @Mock
-    private UserComponent userComponent;
+    private JwtAuthenticationProvider jwtAuthenticationProvider;
 
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     private MockHttpServletRequest request;
@@ -47,7 +43,7 @@ class JwtAuthenticationFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService, userComponent);
+        jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtAuthenticationProvider);
         request = new MockHttpServletRequest("GET", "/api/user/me");
         response = new MockHttpServletResponse();
         filterChain = new MockFilterChain();
@@ -58,51 +54,25 @@ class JwtAuthenticationFilterTest {
         SecurityContextHolder.clearContext();
     }
 
-    private User buildUser() {
-        return User.builder()
-                .id(1L)
-                .email("maria@example.com")
-                .principalRole(Role.ROLE_USER)
-                .roles(List.of(Role.ROLE_USER))
-                .build();
-    }
-
-    private void givenTokenBelongsTo(User user) {
-        given(jwtService.isTokenExpired(TOKEN)).willReturn(false);
-        given(jwtService.parseAccessToken(TOKEN)).willReturn(
-                new JwtService.TokenClaims(user.getId(), user.getEmail(), List.of("ROLE_USER"), "access", Instant.now(), 0));
-        given(userComponent.findById(user.getId())).willReturn(user);
-    }
-
     @Test
-    @DisplayName("should skip the auth endpoints entirely")
-    void shouldSkipAuthEndpoints() throws Exception {
-        MockHttpServletRequest authRequest = new MockHttpServletRequest("POST", "/api/auth/login");
-
-        assertThat(jwtAuthenticationFilter.shouldNotFilter(authRequest)).isTrue();
-    }
-
-    @Test
-    @DisplayName("should filter the protected endpoints")
-    void shouldFilterProtectedEndpoints() {
+    @DisplayName("should skip the public auth endpoints but not logout")
+    void shouldSkipAuthEndpoints() {
+        assertThat(jwtAuthenticationFilter.shouldNotFilter(new MockHttpServletRequest("POST", "/api/auth/login"))).isTrue();
+        assertThat(jwtAuthenticationFilter.shouldNotFilter(new MockHttpServletRequest("POST", "/api/auth/logout"))).isFalse();
         assertThat(jwtAuthenticationFilter.shouldNotFilter(request)).isFalse();
     }
 
     @Test
-    @DisplayName("should authenticate the request when the bearer token is valid")
+    @DisplayName("should authenticate the request when the provider accepts the bearer token")
     void shouldAuthenticate_whenBearerTokenValid() throws Exception {
-        User user = buildUser();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN);
-        givenTokenBelongsTo(user);
-        given(userComponent.getAuthorities(user)).willReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        given(userComponent.getRoleNames(user)).willReturn(List.of("ROLE_USER"));
+        AuthenticatedUserPrincipal principal = new AuthenticatedUserPrincipal(1L, "maria@example.com", List.of("ROLE_USER"));
+        given(jwtAuthenticationProvider.authenticate(any())).willReturn(JwtAuthenticationToken.authenticated(
+                TOKEN, principal, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
-        AuthenticatedUserPrincipal principal =
-                (AuthenticatedUserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        assertThat(principal.id()).isEqualTo(1L);
-        assertThat(principal.email()).isEqualTo("maria@example.com");
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal()).isEqualTo(principal);
         assertThat(filterChain.getRequest()).isNotNull();
     }
 
@@ -113,72 +83,32 @@ class JwtAuthenticationFilterTest {
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         assertThat(filterChain.getRequest()).isNotNull();
+        then(jwtAuthenticationProvider).should(never()).authenticate(any());
     }
 
     @Test
-    @DisplayName("should ignore an access token offered through a cookie")
+    @DisplayName("should ignore an access token offered through a cookie or an empty bearer")
     void shouldIgnoreTokenFromCookie() throws Exception {
         request.setCookies(new Cookie("access_token", TOKEN));
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer   ");
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         assertThat(filterChain.getRequest()).isNotNull();
+        then(jwtAuthenticationProvider).should(never()).authenticate(any());
     }
 
     @Test
-    @DisplayName("should answer 401 when the token is expired")
-    void shouldAnswerUnauthorized_whenTokenExpired() throws Exception {
+    @DisplayName("should answer 401 and stop the chain when the provider refuses the token")
+    void shouldAnswerUnauthorized_whenProviderRefuses() throws Exception {
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN);
-        given(jwtService.isTokenExpired(TOKEN)).willReturn(true);
+        given(jwtAuthenticationProvider.authenticate(any())).willThrow(new BadCredentialsException("Invalid"));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-    }
-
-    @Test
-    @DisplayName("should answer 401 when the token is not an access token")
-    void shouldAnswerUnauthorized_whenTokenTypeIsWrong() throws Exception {
-        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN);
-        given(jwtService.isTokenExpired(TOKEN)).willReturn(false);
-        given(jwtService.parseAccessToken(TOKEN)).willThrow(new JwtException("invalid"));
-
-        jwtAuthenticationFilter.doFilter(request, response, filterChain);
-
-        assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-    }
-
-    @Test
-    @DisplayName("should answer 401 when the user of the token no longer exists")
-    void shouldAnswerUnauthorized_whenUserNotFound() throws Exception {
-        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN);
-        given(jwtService.isTokenExpired(TOKEN)).willReturn(false);
-        given(jwtService.parseAccessToken(TOKEN)).willReturn(
-                new JwtService.TokenClaims(9L, "sumiu@example.com", List.of(), "access", Instant.now(), 0));
-        given(userComponent.findById(9L)).willThrow(new EntityNotFoundException("User not found"));
-
-        jwtAuthenticationFilter.doFilter(request, response, filterChain);
-
-        assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-    }
-
-    @Test
-    @DisplayName("should answer 401 when the token was issued before the last password change")
-    void shouldAnswerUnauthorized_whenTokenIssuedBeforePasswordChange() throws Exception {
-        User user = buildUser();
-        user.setPasswordChangedAt(OffsetDateTime.now());
-        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN);
-        given(jwtService.isTokenExpired(TOKEN)).willReturn(false);
-        given(jwtService.parseAccessToken(TOKEN)).willReturn(
-                new JwtService.TokenClaims(1L, user.getEmail(), List.of("ROLE_USER"), "access",
-                        Instant.now().minusSeconds(600), 0));
-        given(userComponent.findById(1L)).willReturn(user);
-
-        jwtAuthenticationFilter.doFilter(request, response, filterChain);
-
-        assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        assertThat(filterChain.getRequest()).isNull();
     }
 }

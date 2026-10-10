@@ -78,15 +78,6 @@ public class JwtService {
         );
     }
 
-    public boolean isTokenExpired(String token) {
-        try {
-            parseClaims(token);
-            return false;
-        } catch (Exception ex) {
-            return true;
-        }
-    }
-
     private TokenClaims parseTokenOfType(String token, String expectedTokenType) {
         TokenClaims tokenClaims = parseToken(token);
 

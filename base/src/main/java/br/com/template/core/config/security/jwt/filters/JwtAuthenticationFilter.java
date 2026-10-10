@@ -1,27 +1,22 @@
 package br.com.template.core.config.security.jwt.filters;
 
-import br.com.template.core.config.security.jwt.models.AuthenticatedUserPrincipal;
-import br.com.template.core.config.security.jwt.services.JwtService;
-import br.com.template.core.modules.auth.services.AuthService;
-import br.com.template.core.modules.user.components.UserComponent;
-import br.com.template.core.modules.user.models.User;
-import io.jsonwebtoken.JwtException;
-import jakarta.persistence.EntityNotFoundException;
+import br.com.template.core.config.security.jwt.models.JwtAuthenticationToken;
+import br.com.template.core.config.security.jwt.services.JwtAuthenticationProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 @Component
@@ -31,12 +26,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String PUBLIC_AUTH_PREFIX = "/api/auth/";
     private static final String LOGOUT_PATH = "/api/auth/logout";
 
-    private final JwtService jwtService;
-    private final UserComponent userComponent;
+    private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserComponent userComponent) {
-        this.jwtService = jwtService;
-        this.userComponent = userComponent;
+    public JwtAuthenticationFilter(JwtAuthenticationProvider jwtAuthenticationProvider) {
+        this.jwtAuthenticationProvider = jwtAuthenticationProvider;
     }
 
     @Override
@@ -49,49 +42,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        if (Objects.isNull(token) || token.isBlank()) {
+        if (Objects.isNull(token)) {
             filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (jwtService.isTokenExpired(token)) {
-            SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
             return;
         }
 
         try {
-            JwtService.TokenClaims tokenClaims = jwtService.parseAccessToken(token);
-            User user = userComponent.findById(tokenClaims.userId());
+            Authentication authentication = jwtAuthenticationProvider
+                    .authenticate(JwtAuthenticationToken.unauthenticated(token));
 
-            if (AuthService.isIssuedBeforeCutoff(tokenClaims.issuedAt(), user.getPasswordChangedAt())) {
-                throw new IllegalArgumentException("Token issued before password change");
+            if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+                jwtAuthentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             }
 
-            if (AuthService.isFromRevokedSession(tokenClaims, user)) {
-                throw new IllegalArgumentException("Token issued before session revocation");
-            }
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
 
-            List<SimpleGrantedAuthority> authorities = userComponent.getAuthorities(user);
-
-            AuthenticatedUserPrincipal principal = new AuthenticatedUserPrincipal(
-                    user.getId(),
-                    user.getEmail(),
-                    userComponent.getRoleNames(user)
-            );
-
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    principal,
-                    null,
-                    authorities
-            );
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);
-        } catch (EntityNotFoundException | IllegalArgumentException | JwtException ex) {
+        } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
         }
@@ -99,10 +72,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+
         if (Objects.isNull(authorizationHeader) || !authorizationHeader.startsWith(BEARER_PREFIX)) {
             return null;
         }
 
-        return authorizationHeader.substring(BEARER_PREFIX.length());
+        String token = authorizationHeader.substring(BEARER_PREFIX.length()).trim();
+
+        return token.isEmpty() ? null : token;
     }
 }
