@@ -58,6 +58,8 @@ registrado no `FEATURE.md` — substituição silenciosa de arquivo é difícil 
 | `kafka` | produtor com publicação após o commit (`DomainEvent` + `DomainEventPublisher`) | — |
 | `storage` | `FileStorageService` + disco local com guarda de path traversal, `400`/`413` no advice | — |
 | `multitenant` | `@TenantId` do Hibernate, `TenantInterceptor` (`X-Tenant-Id` só para admin da plataforma), vínculo `user_tenants`, `docs/arquitetura/MULTITENANT.md` | — |
+| `openspec` | changes de comportamento com o CLI do OpenSpec (`openspec/config.yaml` em pt-BR, `openspec/specs/`) e o processo no `AI_RULES.md`/`CLAUDE.md`/`README.md`; exclusiva com `docs-changes` | — |
+| `docs-changes` | changes de comportamento em `docs/changes/` (convenção pt-BR sem CLI) e `docs/specs/`, com o processo nos mesmos três arquivos; exclusiva com `openspec` | — |
 | `deploy` | EC2 + systemd + nginx + workflow de deploy, `DEPLOY.md` | — |
 
 ## O que o base sempre traz

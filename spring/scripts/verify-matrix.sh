@@ -16,6 +16,8 @@ COMBOS=(
   "rest,kafka"
   "grpc,kafka"
   "rest,storage,multitenant"
+  "rest,openspec"
+  "rest,docs-changes"
   "rest,grpc,kafka,storage,multitenant,deploy"
 )
 
