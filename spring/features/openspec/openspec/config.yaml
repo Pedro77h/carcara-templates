@@ -1,0 +1,19 @@
+schema: spec-driven
+
+# Lido pelo CLI do OpenSpec e pelas IAs ao escrever cada artefato.
+context: |
+  Serviço Spring Boot gerado pelo carcara-templates (Java 21, Maven, PostgreSQL, JWT).
+  Tudo em pt-BR; as palavras-chave do OpenSpec ficam em inglês (Why, What Changes, ADDED
+  Requirements, SHALL, Scenario, GIVEN/WHEN/THEN).
+  Regras do projeto: AI_RULES.md e CLAUDE.md. Regras de negócio: docs/REGRAS_DE_NEGOCIO.md.
+  Abra e arquive changes com /carcara:openspec.
+
+rules:
+  proposal:
+    - Toda afirmação sobre o sistema cita arquivo:linha ou uma medição
+    - "Impact em checklist: contrato REST, banco/migration, auditoria, LGPD, outros repos (ou 'não se aplica')"
+    - Seção "Fora de escopo" obrigatória; decisões do usuário datadas
+  specs:
+    - Todo requisito tem ao menos um cenário observável na API ou na tela, sem citar classe
+  tasks:
+    - Blocos com dono e check; o último bloco é Fechamento, com o Relatório final ao arquivar

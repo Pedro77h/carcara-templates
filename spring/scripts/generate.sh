@@ -48,6 +48,8 @@ IFS=',' read -r -a SELECTED <<< "${FEATURES// /}"
 for feature in ${SELECTED[@]+"${SELECTED[@]}"}; do
   [ -d "$TEMPLATE_DIR/features/$feature" ] || erro "feature desconhecida: $feature"
 done
+[[ ",${FEATURES// /}," == *,openspec,* && ",${FEATURES// /}," == *,docs-changes,* ]] &&
+  erro "openspec e docs-changes são duas formas de registrar mudanças: escolha uma"
 
 # "minha-loja" -> "MinhaLoja", prefixo das classes CoreApplication/CoreTestServer.
 PASCAL="$(echo "$NAME" | perl -pe 's/(^|-)([a-z])/\U$2/g; s/-//g')"
